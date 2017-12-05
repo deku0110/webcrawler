@@ -69,7 +69,7 @@ func (analyzer *myAnalyzer) Analyzer(respParsers []ParseResponse, resp *base.Res
 			}
 		}
 	}
-	return 
+	return
 }
 
 
@@ -79,6 +79,7 @@ func appendDataList(dataList []base.Data, data base.Data, respDepth uint32) []ba
 		return dataList
 	}
 	req, ok := data.(*base.Request)
+	//如果断言失败证明他不是个Request那么他一定是一个条目,直接追加到data中
 	if !ok {
 		return append(dataList, data)
 	}
