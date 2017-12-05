@@ -69,6 +69,7 @@ func (analyzer *myAnalyzer) Analyzer(respParsers []ParseResponse, resp *base.Res
 			}
 		}
 	}
+	return 
 }
 
 
