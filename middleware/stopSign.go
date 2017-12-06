@@ -26,7 +26,7 @@ type StopSign interface {
 type myStopSign struct {
 	signed       bool              //是否已经发出
 	dealCountMap map[string]uint32 //处理计数字典
-	rwmutex      sync.RWMutex      //读写所
+	rwmutex      sync.RWMutex      //读写锁
 }
 
 func NewStopSign() StopSign{
