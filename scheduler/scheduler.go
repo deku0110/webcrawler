@@ -30,7 +30,6 @@ type Scheduler interface {
 	Start(channelArgs base.ChannelArgs, poolBaseArgs base.PoolBaseArgs, crawDepth uint32,
 		httpClientGenerator GenHttpClient, respParsers []analyzer.ParseResponse,
 		item []itempipeline.ProcessItem, firstHttpReq *http.Request) (err error)
-
 	Stop() bool
 
 	Running() bool
@@ -42,6 +41,10 @@ type Scheduler interface {
 	Summary(prefix string) SchedSummary
 }
 
+//创建调度器
+func NewScheduler() Scheduler {
+	return &myScheduler{}
+}
 type myScheduler struct {
 	channelArgs   base.ChannelArgs
 	poolBaseArgs  base.PoolBaseArgs
@@ -136,24 +139,41 @@ func (sched *myScheduler) Start(channelArgs base.ChannelArgs, poolBaseArgs base.
 }
 
 func (sched *myScheduler) Stop() bool {
-	panic("implement me")
+	if atomic.LoadUint32(&sched.running) != 1 {
+		return false
+	}
+	sched.stopSign.Sign()
+	sched.chanman.Close()
+	sched.reqCahce.close()
+	atomic.StoreUint32(&sched.running, 2)
+	return true
 }
 
 func (sched *myScheduler) Running() bool {
-	panic("implement me")
+	return atomic.LoadUint32(&sched.running) == 1
 }
 
 func (sched *myScheduler) ErrorChan() <-chan error {
-	panic("implement me")
+	if sched.chanman.Status() != middleware.CHANNEL_MANAGER_STATUS_INITIALIZED {
+		return nil
+	}
+	return sched.getErrorChan()
 }
 
 func (sched *myScheduler) Idle() bool {
-	panic("implement me")
+	idleDlPool := sched.dlpool.Used() == 0
+	idleAnalyzerPool := sched.analyzerPool.Used() == 0
+	idleItemPipeline := sched.itemPipeline.ProcessingNumber() == 0
+	if idleDlPool && idleAnalyzerPool && idleItemPipeline {
+		return true
+	}
+	return false
 }
 
 func (sched *myScheduler) Summary(prefix string) SchedSummary {
-	panic("implement me")
+	return NewSchedSummary(sched, prefix)
 }
+
 
 func (sched *myScheduler) startDownloading() {
 	go func() {
